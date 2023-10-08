@@ -1,0 +1,15 @@
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\controller\ProductController.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\entity\Product.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\enums\UserRole.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\repository\ProductRepository.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\IntuitProductServiceApplication.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\dto\ProductRequest.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\service\ProductServiceImpl.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\dto\ProductResponse.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\config\SwaggerConfig.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\dto\ProductStockRequest.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\enums\ActionType.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\service\ProductService.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\mapper\ProductResponseMapper.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\enums\MeasurementUnit.java
+C:\Users\venka\Downloads\OMS-Craft\Products\src\main\java\com\intuit\product\dto\ProductPriceResponse.java
