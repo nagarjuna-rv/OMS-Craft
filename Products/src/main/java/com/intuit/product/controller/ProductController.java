@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/product")
+@RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -51,12 +51,7 @@ public class ProductController {
         return productService.updateProductDetails(id, product);
     }
 
-    @PutMapping("/updateStock")
-    public ResponseEntity<Product> updateProductStock(@RequestBody ProductStockRequest stockRequest) {
-        return ResponseEntity.status(HttpStatus.OK).body(productService.updateProductStock(stockRequest));
-    }
-
-    @PutMapping("/updateStocks")
+    @PutMapping("/updateProductsStock")
     public ResponseEntity<List<Product>> updateProductStocks(@RequestBody List<ProductStockRequest> stockRequests) {
         List<Product> product = new ArrayList<>();
         for (ProductStockRequest stockRequest : stockRequests) {

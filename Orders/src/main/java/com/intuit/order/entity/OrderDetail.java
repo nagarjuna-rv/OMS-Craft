@@ -14,9 +14,6 @@ import javax.persistence.*;
 @NoArgsConstructor
 @Entity
 public class OrderDetail {
-//    @Id
-//    @SequenceGenerator(name = "user_order_sequence", allocationSize = 1)
-//    @GeneratedValue(generator = "user_order_sequence", strategy = GenerationType.SEQUENCE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long detailsId;
@@ -25,8 +22,8 @@ public class OrderDetail {
     private String billingAddress;
     private Integer quantity;
     private Double pricePerUnit;
-    @ManyToOne( fetch=FetchType.LAZY)
-    @JoinColumn(name="product_order_id", referencedColumnName = "orderId", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "product_order_id", referencedColumnName = "orderId", nullable = false)
     @JsonIgnoreProperties("orderDetails")
     private ProductOrder productOrder;
 }

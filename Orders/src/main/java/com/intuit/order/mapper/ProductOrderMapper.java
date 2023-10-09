@@ -34,7 +34,7 @@ public class ProductOrderMapper {
         order.setOrderedOn(LocalDate.now());
         order.setUserId(request.getUserId());
         double totalAmount = 0.0;
-        for (ProductRequest req : request.getProduct()) {
+        for (ProductRequest req : request.getProducts()) {
             totalAmount += (productResponse.get(req.getProductId()).getPrice()) * req.getQuantity();
         }
         order.setTotalAmount(totalAmount);
@@ -45,7 +45,7 @@ public class ProductOrderMapper {
 
     public static List<OrderDetail> mapToOrderDetailListEntity(ProductOrderRequest request, Map<Long, ProductResponse> productResponse, ProductOrder order) {
         List<OrderDetail> details = new ArrayList<>();
-        for (ProductRequest req : request.getProduct()) {
+        for (ProductRequest req : request.getProducts()) {
             OrderDetail detail = new OrderDetail();
             detail.setQuantity(req.getQuantity());
             detail.setPricePerUnit(productResponse.get(req.getProductId()).getPrice());

@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @AllArgsConstructor
@@ -18,5 +18,6 @@ public class ProductOrderRequest {
     private String userId;
     private String shippingAddress;
     private String billingAddress;
-    private List<ProductRequest> product;
+    @NotNull
+    private List<ProductRequest> products;
 }

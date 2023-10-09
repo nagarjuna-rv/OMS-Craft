@@ -13,5 +13,4 @@ public class IntuitOrderServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(IntuitOrderServiceApplication.class, args);
     }
-
 }

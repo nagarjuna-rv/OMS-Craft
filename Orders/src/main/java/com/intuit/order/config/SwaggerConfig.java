@@ -32,13 +32,13 @@ public class SwaggerConfig {
                 .alternateTypeRules(AlternateTypeRules.newRule(typeResolver.resolve(Mono.class,
                         ProductOrder.class), ProductOrder.class))
                 .apiInfo(new ApiInfoBuilder()
-                        .title("Intuit Product Service")
-                        .description("This Microservice holds the following responsibilty for <b>Product Microservice</b> : <br /> "
+                        .title("Intuit Product OrderService")
+                        .description("This Microservice holds the following responsibilty for <b>Product Order Microservice</b> : <br /> "
                                 + "<ol>\n" +
-                                "<li>API to retrieve the list of all available Products.</li>\n" +
-                                "<li>API to retrieve a Product details by Product Id.</li>\n" +
-                                "<li>API to responsible to create a new Product.</li>\n" +
-                                "<li>API to responsible to update the details of an existing Product.</li>\n" +
+                                "<li>API to retrieve the list of all the Orders.</li>\n" +
+                                "<li>API to retrieve a Order details by OrderId Id.</li>\n" +
+                                "<li>API to responsible to create a new Order for products.</li>\n" +
+                                "<li>API to responsible to update the delivery status of an existing Order.</li>\n" +
                                 "<li>API to responsible to delete the details of an existing Product.</li>\n" +
                                 "</ol>")
                         .version("1.0")

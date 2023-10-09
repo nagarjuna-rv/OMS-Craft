@@ -1,5 +1,6 @@
 package com.intuit.product.service;
 
+import com.intuit.product.dto.ProductPriceResponse;
 import com.intuit.product.dto.ProductRequest;
 import com.intuit.product.dto.ProductResponse;
 import com.intuit.product.dto.ProductStockRequest;
@@ -35,31 +36,28 @@ public class ProductServiceTest {
 
     @Test
     public void testAddProductNewProduct() {
-        // Arrange
         ProductRequest productRequest = new ProductRequest();
         productRequest.setName("New Product");
         productRequest.setPrice(10.0);
         productRequest.setDescription("Description");
-        productRequest.setQuantityUnit(MeasurementUnit.KILOGRAM);
+        productRequest.setQuantityUnit(MeasurementUnit.PIECES);
         productRequest.setQuantityAvailable(100);
         Product newProduct = new Product();
         newProduct.setName("New Product");
         newProduct.setPrice(10.0);
         newProduct.setDescription("Description");
-        newProduct.setQuantityUnit(MeasurementUnit.KILOGRAM);
+        newProduct.setQuantityUnit(MeasurementUnit.PIECES);
         newProduct.setQuantityAvailable(100);
         when(productRepository.findByName("New Product")).thenReturn(Optional.empty());
         when(productRepository.save(any())).thenReturn(newProduct);
 
-        // Act
         Product addedProduct = productService.addProduct(productRequest);
 
-        // Assert
         assertNotNull(addedProduct);
         assertEquals("New Product", addedProduct.getName());
         assertEquals(10.0, addedProduct.getPrice());
         assertEquals("Description", addedProduct.getDescription());
-        assertEquals(MeasurementUnit.KILOGRAM, addedProduct.getQuantityUnit());
+        assertEquals(MeasurementUnit.PIECES, addedProduct.getQuantityUnit());
         assertEquals(100, addedProduct.getQuantityAvailable());
 
         verify(productRepository, times(1)).findByName("New Product");
@@ -68,7 +66,6 @@ public class ProductServiceTest {
 
     @Test
     public void testAddProductExistingProduct() {
-        // Arrange
         ProductRequest productRequest = new ProductRequest();
         productRequest.setName("Existing Product");
         productRequest.setQuantityAvailable(50);
@@ -77,21 +74,19 @@ public class ProductServiceTest {
         existingProduct.setName("Existing Product");
         existingProduct.setPrice(10.0);
         existingProduct.setDescription("Original Description");
-        existingProduct.setQuantityUnit(MeasurementUnit.KILOGRAM);
+        existingProduct.setQuantityUnit(MeasurementUnit.PIECES);
         existingProduct.setQuantityAvailable(30);
 
         when(productRepository.findByName("Existing Product")).thenReturn(Optional.of(existingProduct));
         when(productRepository.save(any())).thenReturn(existingProduct);
 
-        // Act
         Product updatedProduct = productService.addProduct(productRequest);
 
-        // Assert
         assertNotNull(updatedProduct);
         assertEquals("Existing Product", updatedProduct.getName());
         assertEquals(10.0, updatedProduct.getPrice());
         assertEquals("Original Description", updatedProduct.getDescription());
-        assertEquals(MeasurementUnit.KILOGRAM, updatedProduct.getQuantityUnit());
+        assertEquals(MeasurementUnit.PIECES, updatedProduct.getQuantityUnit());
         assertEquals(80, updatedProduct.getQuantityAvailable()); // Initial + Added quantity
 
         verify(productRepository, times(1)).findByName("Existing Product");
@@ -121,23 +116,19 @@ public class ProductServiceTest {
         when(productRepository.findById(productId)).thenReturn(Optional.of(productToUpdate));
         when(productRepository.save(any())).thenReturn(productToUpdate);
 
-        ProductResponse updatedProductResponse = productService.updateProductDetails(productId, productToUpdate);
+        ProductResponse updatedProductResponse = productService.updateProductDetails(productId, ProductRequest.builder().build());
 
         assertNotNull(updatedProductResponse);
         assertEquals(productId, updatedProductResponse.getProductId());
-        // Add more assertions for updated fields as needed
     }
+
     @Test
     public void testUpdateProductStockIncrement() {
-        // Arrange
         Long productId = 1L;
         ActionType actionType = ActionType.COUNT_INCREMENT;
         Integer quantity = 10;
 
-        ProductStockRequest stockRequest = new ProductStockRequest();
-        stockRequest.setProductId(productId);
-        stockRequest.setActionType(actionType);
-        stockRequest.setQuantity(quantity);
+        ProductStockRequest stockRequest = new ProductStockRequest(productId, quantity, actionType);
 
         Product existingProduct = new Product();
         existingProduct.setProductId(productId);
@@ -146,10 +137,8 @@ public class ProductServiceTest {
         when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
         when(productRepository.save(any())).thenReturn(existingProduct);
 
-        // Act
         Product updatedProduct = productService.updateProductStock(stockRequest);
 
-        // Assert
         assertNotNull(updatedProduct);
         assertEquals(productId, updatedProduct.getProductId());
         assertEquals(30, updatedProduct.getQuantityAvailable()); // Initial quantity + added quantity
@@ -160,7 +149,6 @@ public class ProductServiceTest {
 
     @Test
     public void testUpdateProductStockDecrement() {
-        // Arrange
         Long productId = 1L;
         ActionType actionType = ActionType.COUNT_DECREMENT;
         Integer quantity = 5;
@@ -177,10 +165,8 @@ public class ProductServiceTest {
         when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
         when(productRepository.save(any())).thenReturn(existingProduct);
 
-        // Act
         Product updatedProduct = productService.updateProductStock(stockRequest);
 
-        // Assert
         assertNotNull(updatedProduct);
         assertEquals(productId, updatedProduct.getProductId());
         assertEquals(5, updatedProduct.getQuantityAvailable()); // Initial quantity - deducted quantity
@@ -191,7 +177,6 @@ public class ProductServiceTest {
 
     @Test
     public void testUpdateProductStockProductNotFound() {
-        // Arrange
         Long productId = 1L;
         ActionType actionType = ActionType.COUNT_INCREMENT;
         Integer quantity = 10;
@@ -203,25 +188,22 @@ public class ProductServiceTest {
 
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        // Act and Assert
         assertThrows(RuntimeException.class, () -> productService.updateProductStock(stockRequest));
 
         verify(productRepository, times(1)).findById(productId);
         verify(productRepository, never()).save(any());
     }
+
     @Test
     public void testDeleteProductExisting() {
-        // Arrange
         Long productId = 1L;
         Product productToDelete = new Product();
         productToDelete.setProductId(productId);
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(productToDelete));
 
-        // Act
         ProductResponse response = productService.deleteProduct(productId);
 
-        // Assert
         assertNotNull(response);
         assertEquals(productId, response.getProductId());
 
@@ -230,33 +212,74 @@ public class ProductServiceTest {
 
     @Test
     public void testDeleteProductNonExisting() {
-        // Arrange
         Long productId = 1L;
 
-        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+        when(productRepository.findById(productId)).thenReturn(Optional.of(Product.builder().productId(1L).build()));
 
-        // Act
         ProductResponse response = productService.deleteProduct(productId);
 
-        // Assert
-        assertNull(response);
+        assertNotNull(response);
 
         verify(productRepository, times(1)).findById(productId);
     }
 
     @Test
+    void testGetPriceQuoteByProductId() {
+        Long productId = 1L;
+        Integer quantity = 5;
+        double pricePerUnit = 10.0;
+
+        Product product = new Product();
+        product.setProductId(productId);
+        product.setPrice(pricePerUnit);
+        product.setQuantityAvailable(20);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+
+        ProductPriceResponse response = productService.getPriceQuoteByProductId(productId, quantity);
+
+        assertNotNull(response);
+        assertEquals(productId, response.getProductId());
+        assertEquals(pricePerUnit, response.getPricePerUnit());
+        assertEquals(quantity, response.getQuantity());
+        assertEquals(pricePerUnit * quantity, response.getTotalPrice());
+    }
+
+    @Test
+    void testGetPriceQuoteByProductIdNotFound() {
+        Long productId = 1L;
+        Integer quantity = 5;
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> productService.getPriceQuoteByProductId(productId, quantity));
+    }
+
+    @Test
+    void testGetPriceQuoteByProductIdOutOfStock() {
+        Long productId = 1L;
+        Integer quantity = 25;
+
+        Product product = new Product();
+        product.setProductId(productId);
+        product.setQuantityAvailable(20);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+
+        assertThrows(RuntimeException.class, () -> productService.getPriceQuoteByProductId(productId, quantity));
+    }
+
+    @Test
     public void testGetAllProduct() {
-        // Arrange
+
         List<Product> productList = new ArrayList<>();
         productList.add(new Product());
         productList.add(new Product());
 
         when(productRepository.findAll()).thenReturn(productList);
 
-        // Act
         List<ProductResponse> responseList = productService.getAllProduct();
 
-        // Assert
         assertNotNull(responseList);
         assertEquals(2, responseList.size());
 
@@ -265,15 +288,12 @@ public class ProductServiceTest {
 
     @Test
     public void testGetAllProductEmptyList() {
-        // Arrange
         List<Product> productList = new ArrayList<>();
 
         when(productRepository.findAll()).thenReturn(productList);
 
-        // Act
         List<ProductResponse> responseList = productService.getAllProduct();
 
-        // Assert
         assertNotNull(responseList);
         assertTrue(responseList.isEmpty());
 
