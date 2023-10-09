@@ -1,19 +1,19 @@
 package com.intuit.order.service;
 
-import com.intuit.order.entity.OrderDetail;
+import com.intuit.order.dto.*;
 import com.intuit.order.entity.ProductOrder;
 import com.intuit.order.enums.ActionType;
 import com.intuit.order.enums.OrderStatus;
 import com.intuit.order.exception.CustomException;
-import com.intuit.order.helper.ProductOrderMapper;
-import com.intuit.order.model.*;
+import com.intuit.order.mapper.ProductOrderMapper;
 import com.intuit.order.repository.OrderDetailRepository;
 import com.intuit.order.repository.ProductOrderRepository;
-import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +36,13 @@ public class ProductOrderService {
         return orderRepository.findAll().stream().map(ProductOrderMapper::entityToDto).collect(Collectors.toList());
     }
 
+    public Map<Long, ProductResponse> getProducts(ProductOrderRequest productOrderRequest) {
+        List<Long> productIds = productOrderRequest.getProduct().stream().map(ProductRequest::getProductId).collect(Collectors.toList());
+        return productService.getProductResponseMap(productIds);
+    }
+
+
+
     @Transactional
     public ProductOrderResponse updateProductOrderDeliveryStatus(UpdateStatusDto updateStatusDto) {
         ProductOrder order = orderRepository.findById(updateStatusDto.getOrderId())
@@ -51,20 +58,18 @@ public class ProductOrderService {
             order.setOrderStatus(OrderStatus.valueOf(updateStatusDto.getStatus()));
         if (updateStatusDto.getStatus().equals(OrderStatus.CANCELLED.toString())) {
             order.setOrderStatus(OrderStatus.valueOf(updateStatusDto.getStatus()));
-            ProductStockRequest productStockRequest = ProductStockRequest.builder().productId(order.getOrderDetails().getProductId()).quantity(order.getOrderDetails().getQuantity()).actionType(ActionType.COUNT_INCREMENT).build();
-            productService.updateProductStock(productStockRequest);
+            List<ProductStockRequest> stockUpdates = order.getOrderDetails().stream().map(product->ProductStockRequest.builder().productId(product.getProductId()).quantity(product.getQuantity()).actionType(ActionType.COUNT_DECREMENT).build()).collect(Collectors.toList());
+            productService.updateProductStock(stockUpdates);
         }
 
         return ProductOrderMapper.entityToDto(this.orderRepository.save(order));
     }
 
     @Transactional
-    public ProductOrderResponse createProductOrder(ProductOrderRequest productOrderRequest, ProductResponse productResponse) {
+    public ProductOrderResponse createProductOrder(ProductOrderRequest productOrderRequest, Map<Long, ProductResponse> productResponse) {
         ProductOrder productOrder = orderRepository.save(ProductOrderMapper.dtoToEntity(productOrderRequest, productResponse));
-        OrderDetail orderDetail = orderDetailRepository.save(ProductOrderMapper.dtoToOrderDetailEntity(productOrderRequest, productResponse, productOrder.getOrderId()));
-        productOrder.setOrderDetails(orderDetail);
-        ProductStockRequest productStockRequest = ProductStockRequest.builder().productId(productOrderRequest.getProduct().getProductId()).quantity(productOrderRequest.getProduct().getQuantity()).actionType(ActionType.COUNT_DECREMENT).build();
-        productService.updateProductStock(productStockRequest);
+        List<ProductStockRequest> stockUpdates = productOrderRequest.getProduct().stream().map(product->ProductStockRequest.builder().productId(product.getProductId()).quantity(product.getQuantity()).actionType(ActionType.COUNT_DECREMENT).build()).collect(Collectors.toList());
+        productService.updateProductStock(stockUpdates);
         return ProductOrderMapper.entityToDto(productOrder);
     }
 

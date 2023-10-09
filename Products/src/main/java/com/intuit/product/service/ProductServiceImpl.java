@@ -17,17 +17,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.intuit.product.constant.Constants.OUT_OF_STOCK;
+import static com.intuit.product.constant.Constants.PRODUCT_NOT_FOUND;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ProductServiceImpl implements ProductService{
+public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
 
     @Override
     public Product addProduct(ProductRequest productRequest) {
         Optional<Product> fetchedProduct = productRepository.findByName(productRequest.getName());
-        if(fetchedProduct.isPresent()) {
+        if (fetchedProduct.isPresent()) {
             fetchedProduct.get().setQuantityAvailable(fetchedProduct.get().getQuantityAvailable() + productRequest.getQuantityAvailable());
             return productRepository.save(fetchedProduct.get());
         }
@@ -47,57 +50,56 @@ public class ProductServiceImpl implements ProductService{
 
     public ProductPriceResponse getPriceQuoteByProductId(Long id, Integer quantity) {
 
-        Optional<Product> optionalProduct =  productRepository.findById(id);
-        if(optionalProduct.isPresent()) {
+        Optional<Product> optionalProduct = productRepository.findById(id);
+        if (optionalProduct.isPresent()) {
             Product product = optionalProduct.get();
-            if(product.getQuantityAvailable() < quantity) {
-                throw new RuntimeException("Due to limited stock, Maximum Order limit for this product is "+ product.getQuantityAvailable());
+            if (product.getQuantityAvailable() < quantity) {
+                throw new RuntimeException(OUT_OF_STOCK + product.getQuantityAvailable());
             }
             return ProductPriceResponse.builder().productId(product.getProductId())
                     .pricePerUnit(product.getPrice())
                     .quantity(quantity)
                     .totalPrice(product.getPrice() * quantity).build();
+        } else {
+            throw new RuntimeException(PRODUCT_NOT_FOUND + id);
         }
-        else {
-            throw new RuntimeException("No Product found for given id "+ id);
-        }
-       }
+    }
 
     /**
      * method used to update product Details
      */
     @Override
-    public ProductResponse updateProductDetails(Long productId ,Product product) {
-        productRepository.findById(productId).ifPresent(prod -> {
-            if(product.getDescription() !=null)prod.setDescription(product.getDescription());
-            if(product.getPrice() !=null)prod.setPrice(product.getPrice());
-            if(product.getName() !=null)prod.setName(product.getName());
-            if(product.getQuantityAvailable() !=null)prod.setQuantityAvailable(product.getQuantityAvailable());
-            if(product.getQuantityUnit() !=null)prod.setQuantityUnit(prod.getQuantityUnit());
-            productRepository.save(prod);
-        });
-        product.setProductId(productId);
-        return ProductResponseMapper.mapProductEntityToProductResponse(product);
+    public ProductResponse updateProductDetails(Long productId, ProductRequest product) {
+        Product dbProduct = productRepository.findById(productId).orElseThrow(() -> new RuntimeException(PRODUCT_NOT_FOUND + productId));
+        if (product.getDescription() != null) dbProduct.setDescription(product.getDescription());
+        if (product.getPrice() != null) dbProduct.setPrice(product.getPrice());
+        if (product.getName() != null) dbProduct.setName(product.getName());
+        if (product.getQuantityAvailable() != null) dbProduct.setQuantityAvailable(product.getQuantityAvailable());
+        if (product.getQuantityUnit() != null) dbProduct.setQuantityUnit(product.getQuantityUnit());
+        Product savedProduct = productRepository.save(dbProduct);
+        return ProductResponseMapper.mapProductEntityToProductResponse(savedProduct);
     }
+
     @Override
     public Product updateProductStock(ProductStockRequest stock) {
-        Product fetchedProduct = productRepository.findById(stock.getProductId()).orElseThrow(() -> new RuntimeException());
+        Product fetchedProduct = productRepository.findById(stock.getProductId()).orElseThrow(() -> new RuntimeException(PRODUCT_NOT_FOUND + stock.getProductId()));
         Integer currentProductQuantity = fetchedProduct.getQuantityAvailable();
 
-        if(StringUtils.equals(ActionType.COUNT_INCREMENT.name(), stock.getActionType().name())) {
-            fetchedProduct.setQuantityAvailable(currentProductQuantity+stock.getQuantity());
+        if (StringUtils.equals(ActionType.COUNT_INCREMENT.name(), stock.getActionType().name())) {
+            fetchedProduct.setQuantityAvailable(currentProductQuantity + stock.getQuantity());
         } else {
-            fetchedProduct.setQuantityAvailable(currentProductQuantity-stock.getQuantity());
+            fetchedProduct.setQuantityAvailable(currentProductQuantity - stock.getQuantity());
         }
         return productRepository.save(fetchedProduct);
     }
+
     /**
      * method used to delete Product
      */
     @Override
     public ProductResponse deleteProduct(Long productId) {
         final Optional<Product> product = productRepository.findById(productId);
-        if(product.isEmpty()) {
+        if (product.isEmpty()) {
             return null;
         }
         return ProductResponseMapper.mapProductEntityToProductResponse(product.get());

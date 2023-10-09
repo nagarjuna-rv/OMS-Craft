@@ -93,7 +93,7 @@ public class ProductIntegrationTest {
     @Test
     public void testUpdateProductDetails() throws Exception {
         // Mock the productService to return a mockProductResponse
-        when(productService.updateProductDetails(1L, new Product())).thenReturn(mockProductResponse);
+        when(productService.updateProductDetails(1L, new ProductRequest())).thenReturn(mockProductResponse);
 
         // Perform the PUT request to update a product's details
         mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/product/update/1")

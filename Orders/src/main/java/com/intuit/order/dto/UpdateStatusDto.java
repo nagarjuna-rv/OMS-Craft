@@ -1,4 +1,4 @@
-package com.intuit.order.model;
+package com.intuit.order.dto;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;

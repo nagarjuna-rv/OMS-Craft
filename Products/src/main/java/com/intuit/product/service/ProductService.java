@@ -11,15 +11,15 @@ import java.util.Optional;
 
 public interface ProductService {
     Product addProduct(ProductRequest productRequest);
-    ProductResponse updateProductDetails(Long productId, Product product);
+    ProductResponse updateProductDetails(Long productId, ProductRequest product);
 
     Product updateProductStock(ProductStockRequest stock);
 
     ProductResponse deleteProduct(Long productId);
     List<ProductResponse> getAllProduct();
-    Optional<ProductResponse> getProductById(Long Id);
+    Optional<ProductResponse> getProductById(Long id);
 
-    ProductPriceResponse getPriceQuoteByProductId(Long Id, Integer quantity);
+    ProductPriceResponse getPriceQuoteByProductId(Long id, Integer quantity);
 
 
 

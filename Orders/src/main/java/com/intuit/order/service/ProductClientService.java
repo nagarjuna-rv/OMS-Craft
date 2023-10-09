@@ -1,51 +1,64 @@
 package com.intuit.order.service;
 
-import com.intuit.order.exception.CustomException;
+import com.intuit.order.dto.ProductResponse;
+import com.intuit.order.dto.ProductStockRequest;
 import com.intuit.order.exception.ServerException;
-import com.intuit.order.model.ProductOrderRequest;
-import com.intuit.order.model.ProductResponse;
-import com.intuit.order.model.ProductStockRequest;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-//import reactor.util.re
+import reactor.core.scheduler.Schedulers;
+
+import java.util.AbstractMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.intuit.order.constant.Constants.API_V1_PRODUCT_ID;
+import static com.intuit.order.constant.Constants.API_V1_PRODUCT_UPDATE_STOCK;
 
 @Service
 public class ProductClientService {
+    private static final Logger logger = LoggerFactory.getLogger(ProductClientService.class);
 
-    public static final String API_V1_PRODUCT_ID = "http://localhost:8081/api/v1/product/{id}";
-    public static final String API_V1_PRODUCT_UPDATE_STOCK = "http://localhost:8081/api/v1/product/updateStock";
+    private Mono<ProductResponse> getProduct(Long productId) {
+        return WebClient.create().get()
+                .uri(API_V1_PRODUCT_ID, productId)
+                .retrieve()
+                .bodyToMono(ProductResponse.class);
+    }
 
     @HystrixCommand(fallbackMethod = "fallbackGetProductResponse")
-    public ProductResponse getProduct(ProductOrderRequest productOrderRequest) {
-        return WebClient.create().get()
-                .uri(API_V1_PRODUCT_ID, productOrderRequest.getProduct().getProductId())
+    public Map<Long, ProductResponse> getProductResponseMap(List<Long> productIds) {
+        Mono<Map<Long, ProductResponse>> resp = Flux.fromIterable(productIds)
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .flatMap(productId-> getProduct(productId).map(product -> new AbstractMap.SimpleEntry<>(productId, product))).sequential()
+                .collectMap(Map.Entry::getKey, Map.Entry::getValue);
+        return resp.block();
+    }
+    @HystrixCommand(fallbackMethod = "fallbackUpdateProductStock")
+    public void updateProductStock(List<ProductStockRequest> productStockRequest) {
+        WebClient.create().put()
+                .uri(API_V1_PRODUCT_UPDATE_STOCK)
+                .body(Mono.just(productStockRequest), new ParameterizedTypeReference<List<ProductStockRequest>>(){})
                 .retrieve()
-                .bodyToMono(ProductResponse.class)
-//                .retryWhen(Retry.backoff(3, Duration.ofSeconds(5))
-//                .filter(this::is5xxServerError))
+                .bodyToMono(new ParameterizedTypeReference<List<ProductResponse>>(){})
+//                .retry(3,this::is5xxServerError)
                 .block();
     }
 
-    @HystrixCommand(fallbackMethod = "fallbackUpdateProductStock")
-    public void updateProductStock(ProductStockRequest productStockRequest) {
-        WebClient.create().put()
-                .uri(API_V1_PRODUCT_UPDATE_STOCK)
-                .body(Mono.just(productStockRequest), ProductStockRequest.class)
-                .retrieve()
-                .bodyToMono(ProductResponse.class)
-//                .retryWhen(Retry.backoff(3, Duration.ofSeconds(2))
-//                .filter(this::is5xxServerError))
-        .block();
-    }
-
-    public ProductResponse fallbackGetProductResponse(ProductOrderRequest productOrderRequest) {
+    public Map<Long, ProductResponse> fallbackGetProductResponse(List<Long> productOrderRequest, Throwable t) {
+        logger.error("From Hystrix fallback fallbackGetProductResponse : ", t);
         throw new ServerException("Unable to fetch the given Product details"); // Example fallback response
     }
 
-    public void fallbackUpdateProductStock(ProductStockRequest productStockRequest) {
+    public void fallbackUpdateProductStock(List<ProductStockRequest> productStockRequest, Throwable t) {
+        logger.error("From Hystrix fallback fallbackUpdateProductStock : ", t);
         throw new ServerException("Unable to Update the given Product stock"); // Example fallback response
 
     }

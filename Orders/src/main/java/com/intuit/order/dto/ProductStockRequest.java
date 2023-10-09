@@ -1,4 +1,4 @@
-package com.intuit.order.model;
+package com.intuit.order.dto;
 
 import com.intuit.order.enums.ActionType;
 import lombok.AllArgsConstructor;

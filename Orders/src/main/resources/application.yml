@@ -2,7 +2,9 @@ server:
   port: 8090
   error:
     include-message: always
-
+logging:
+  level:
+    root: INFO
 spring:
   application:
     name: intuit-order
@@ -25,9 +27,9 @@ hystrix:
           thread:
             timeoutInMilliseconds: 10000000
       circuitBreaker:
-        requestVolumeThreshold: 20
-        sleepWindowInMilliseconds: 5000
-        errorThresholdPercentage: 50
+        requestVolumeThreshold: 3
+        sleepWindowInMilliseconds: 10000
+        errorThresholdPercentage: 20
   dashboard:
     proxy-stream-allow-list: "*"
 management:

@@ -1,41 +1,47 @@
 package com.intuit.order.controller;
 
+import com.intuit.order.dto.*;
 import com.intuit.order.exception.BadRequestException;
-import com.intuit.order.model.ProductOrderRequest;
-import com.intuit.order.model.ProductOrderResponse;
-import com.intuit.order.model.ProductResponse;
-import com.intuit.order.model.UpdateStatusDto;
-import com.intuit.order.service.ProductClientService;
 import com.intuit.order.service.ProductOrderService;
-import javax.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/product-order")
 public class ProductOrderController {
+    private static final Logger logger = LoggerFactory.getLogger(ProductOrderController.class);
 
     @Autowired
     ProductOrderService productOrderService;
 
-    @Autowired
-    ProductClientService productService;
-
     @PostMapping("/add")
-    public ResponseEntity<?> createProductOrderRequest(@Valid @RequestBody ProductOrderRequest productOrderRequest) {
+    public ResponseEntity<ProductOrderResponse> createProductOrderRequest(@Valid @RequestBody ProductOrderRequest productOrderRequest) {
 
-        ProductResponse productResponse = productService.getProduct(productOrderRequest);
+        Map<Long, ProductResponse> productResponse = productOrderService.getProducts(productOrderRequest);
         if (productResponse == null) {
             throw new BadRequestException("This product ran into Out of Stock. We will keep you posted once available");
         }
-        Integer productQtyInStock = productResponse.getQuantityAvailable();
-        if (productQtyInStock < productOrderRequest.getProduct().getQuantity()) {
-            throw new BadRequestException("Due to limited stock, Maximum Order limit for this product is " + productQtyInStock);
+
+        for (Map.Entry<Long, ProductResponse> entry : productResponse.entrySet()) {
+            Long key = entry.getKey();
+            ProductResponse value = entry.getValue();
+            Integer productQtyInStock = value.getQuantityAvailable();
+            Optional<ProductRequest> pr = productOrderRequest.getProduct().stream().filter(productRequest -> productRequest.getProductId().equals(key)).findFirst();
+            if (pr.isPresent() && productQtyInStock < pr.get().getQuantity()) {
+                productResponse.remove(key);
+                logger.info("Due to limited stock, Maximum Order limit for this product is {} ", productQtyInStock);
+            }
         }
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productOrderService.createProductOrder(productOrderRequest, productResponse));
     }
@@ -53,8 +59,8 @@ public class ProductOrderController {
     }
 
 //System Level APIs
-    @GetMapping
-    public ResponseEntity<List<ProductOrderResponse>> fetchAllProductOrders() {
+    @GetMapping("/all")
+    public ResponseEntity<List<ProductOrderResponse>> getAllProductOrders() {
         return ResponseEntity.status(HttpStatus.OK).body(this.productOrderService.fetchAllProductOrders());
     }
 }

@@ -1,29 +1,31 @@
 package com.intuit.order.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.intuit.order.enums.OrderStatus;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity(name = "Orders")
+@Entity(name = "ProductOrder")
 public class ProductOrder {
+//    @SequenceGenerator(name = "product_order_sequence", allocationSize = 1)
+//    @GeneratedValue(generator = "product_order_sequence", strategy = GenerationType.SEQUENCE)
     @Id
-    @SequenceGenerator(name = "product_order_sequence", allocationSize = 1)
-    @GeneratedValue(generator = "product_order_sequence", strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderId;
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
     private LocalDate orderedOn;
     private String userId;
     private Double totalAmount;
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "orderId", referencedColumnName = "orderId")
-    private OrderDetail orderDetails;
+    @OneToMany(mappedBy = "productOrder", cascade = CascadeType.ALL, fetch=FetchType.LAZY)
+    @JsonIgnoreProperties("productOrder")
+    private List<OrderDetail> orderDetails;
 
 }
