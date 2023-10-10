@@ -11,10 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/product")
+@RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -26,10 +27,9 @@ public class ProductController {
         return productService.getAllProduct();
     }
 
-
     @GetMapping(value = "/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable("id") final Long id) {
-        return productService.getProductById(id).map((product) -> new ResponseEntity<>(product, HttpStatus.OK))
+        return productService.getProductById(id).map(product -> new ResponseEntity<>(product, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
@@ -47,13 +47,17 @@ public class ProductController {
     }
 
     @PutMapping(value = "/update/{id}")
-    public ProductResponse updateProductDetails(@PathVariable("id") final Long id, @RequestBody Product product) {
+    public ProductResponse updateProductDetails(@PathVariable("id") final Long id, @RequestBody ProductRequest product) {
         return productService.updateProductDetails(id, product);
     }
 
-    @PutMapping("/updateStock")
-    public ResponseEntity<Product> updateProductStock(@RequestBody ProductStockRequest stockRequest) {
-        return ResponseEntity.status(HttpStatus.OK).body(productService.updateProductStock(stockRequest));
+    @PutMapping("/updateProductsStock")
+    public ResponseEntity<List<Product>> updateProductStocks(@RequestBody List<ProductStockRequest> stockRequests) {
+        List<Product> product = new ArrayList<>();
+        for (ProductStockRequest stockRequest : stockRequests) {
+            product.add(productService.updateProductStock(stockRequest));
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(product);
     }
 
     @DeleteMapping("/delete/{id}")
@@ -62,11 +66,3 @@ public class ProductController {
     }
 
 }
-
-
-/**
- * 1. Get all products(product_price)
- * 2. Get Price Quatation(productId, Quantity)
- * 3. Select Product,Qunatity and Submit Order
- *
- * **/

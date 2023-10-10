@@ -1,6 +1,7 @@
 package com.intuit.product.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intuit.product.dto.ProductPriceResponse;
 import com.intuit.product.dto.ProductRequest;
 import com.intuit.product.dto.ProductResponse;
 import com.intuit.product.dto.ProductStockRequest;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -41,7 +43,6 @@ public class ProductIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        // Initialize mock data
         mockProductResponse = new ProductResponse();
         mockProductResponse.setProductId(1L);
         mockProductResponse.setName("Test Product");
@@ -54,11 +55,10 @@ public class ProductIntegrationTest {
 
     @Test
     public void testAddProduct() throws Exception {
-        // Mock the productService to return the mockProductResponse
+
         when(productService.addProduct(any(ProductRequest.class))).thenReturn(new Product());
 
-        // Perform the POST request to add a product
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/product/create")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(mockProductRequest)))
                 .andExpect(MockMvcResultMatchers.status().isCreated());
@@ -66,11 +66,10 @@ public class ProductIntegrationTest {
 
     @Test
     public void testGetAllProducts() throws Exception {
-        // Mock the productService to return a list of mockProductResponse
+
         when(productService.getAllProduct()).thenReturn(Collections.singletonList(mockProductResponse));
 
-        // Perform the GET request to get all products
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/product/all"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/all"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].productId").value(1))
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].name").value("Test Product"))
@@ -79,11 +78,10 @@ public class ProductIntegrationTest {
 
     @Test
     public void testGetProductById() throws Exception {
-        // Mock the productService to return an optional of mockProductResponse
+
         when(productService.getProductById(1L)).thenReturn(Optional.of(mockProductResponse));
 
-        // Perform the GET request to get a product by ID
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/product/1"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/1"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.productId").value(1))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Test Product"))
@@ -92,11 +90,10 @@ public class ProductIntegrationTest {
 
     @Test
     public void testUpdateProductDetails() throws Exception {
-        // Mock the productService to return a mockProductResponse
-        when(productService.updateProductDetails(1L, new Product())).thenReturn(mockProductResponse);
 
-        // Perform the PUT request to update a product's details
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/product/update/1")
+        when(productService.updateProductDetails(1L, new ProductRequest())).thenReturn(mockProductResponse);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/products/update/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new Product())))
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -107,26 +104,44 @@ public class ProductIntegrationTest {
 
     @Test
     public void testUpdateProductStock() throws Exception {
-        // Mock the productService to return a mock Product
         when(productService.updateProductStock(any(ProductStockRequest.class))).thenReturn(new Product());
 
-        // Perform the PUT request to update a product's stock
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/product/updateStock")
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/products/updateProductsStock")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new ProductStockRequest())))
+                        .content(objectMapper.writeValueAsString(Arrays.asList(new ProductStockRequest()))))
                 .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     @Test
     public void testDeleteProduct() throws Exception {
-        // Mock the productService to return a mockProductResponse
         when(productService.deleteProduct(1L)).thenReturn(mockProductResponse);
 
-        // Perform the DELETE request to delete a product by ID
-        mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/product/delete/1"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/delete/1"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.productId").value(1))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Test Product"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.price").value(10.0));
+    }
+
+    @Test
+    public void testGetPriceQuoteByProductId() throws Exception {
+        long productId = 1L;
+        int quantity = 5;
+
+        ProductPriceResponse productPriceResponse = new ProductPriceResponse();
+        productPriceResponse.setProductId(productId);
+        productPriceResponse.setQuantity(quantity);
+        productPriceResponse.setTotalPrice(50.0);
+
+        when(productService.getPriceQuoteByProductId(productId, quantity)).thenReturn(productPriceResponse);
+
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/api/v1/products/{id}/quantity/{quantity}", productId, quantity)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.productId").value(productId))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.quantity").value(quantity))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.totalPrice").value(50.0))
+                .andReturn();
     }
 }

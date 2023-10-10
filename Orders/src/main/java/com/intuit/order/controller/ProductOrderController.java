@@ -1,43 +1,31 @@
 package com.intuit.order.controller;
 
-import com.intuit.order.exception.BadRequestException;
-import com.intuit.order.model.ProductOrderRequest;
-import com.intuit.order.model.ProductOrderResponse;
-import com.intuit.order.model.ProductResponse;
-import com.intuit.order.model.UpdateStatusDto;
-import com.intuit.order.service.ProductClientService;
+import com.intuit.order.dto.ProductOrderRequest;
+import com.intuit.order.dto.ProductOrderResponse;
+import com.intuit.order.dto.UpdateStatusDto;
 import com.intuit.order.service.ProductOrderService;
-import javax.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/product-order")
+@RequestMapping("/api/v1/product-order")
 public class ProductOrderController {
+    private static final Logger logger = LoggerFactory.getLogger(ProductOrderController.class);
 
     @Autowired
     ProductOrderService productOrderService;
 
-    @Autowired
-    ProductClientService productService;
-
     @PostMapping("/add")
-    public ResponseEntity<?> createProductOrderRequest(@Valid @RequestBody ProductOrderRequest productOrderRequest) {
-
-        ProductResponse productResponse = productService.getProduct(productOrderRequest);
-        if (productResponse == null) {
-            throw new BadRequestException("This product ran into Out of Stock. We will keep you posted once available");
-        }
-        Integer productQtyInStock = productResponse.getQuantityAvailable();
-        if (productQtyInStock < productOrderRequest.getProduct().getQuantity()) {
-            throw new BadRequestException("Due to limited stock, Maximum Order limit for this product is " + productQtyInStock);
-        }
+    public ResponseEntity<ProductOrderResponse> createProductOrderRequest(@Valid @RequestBody ProductOrderRequest productOrderRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(productOrderService.createProductOrder(productOrderRequest, productResponse));
+                .body(productOrderService.createProductOrder(productOrderRequest));
     }
 
     @PutMapping
@@ -52,9 +40,9 @@ public class ProductOrderController {
                 .body(this.productOrderService.fetchProductOrderById(orderId));
     }
 
-//System Level APIs
-    @GetMapping
-    public ResponseEntity<List<ProductOrderResponse>> fetchAllProductOrders() {
+    //System Level APIs
+    @GetMapping("/all")
+    public ResponseEntity<List<ProductOrderResponse>> getAllProductOrders() {
         return ResponseEntity.status(HttpStatus.OK).body(this.productOrderService.fetchAllProductOrders());
     }
 }
